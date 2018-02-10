@@ -2,6 +2,7 @@
 #include <zconf.h>
 #include <stdlib.h>
 #include <wait.h>
+#include <errno.h>
 #include "shared_memory.h"
 #include "error.h"
 
@@ -111,7 +112,10 @@ int main() {
     }
 
     // wait for children to die
-    wait(NULL);
+    while (wait(NULL) > 0);
+    if (errno != ECHILD) {
+        error_exit("Error in wait()");
+    }
 
     // print results
     for (size_t i = 0; i < 2*N; i++) {

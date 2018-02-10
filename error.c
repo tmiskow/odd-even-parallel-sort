@@ -5,6 +5,6 @@
 #include "error.h"
 
 void error_exit(const char* message) {
-    fprintf(stderr, "pid: %d\nerror: %d (%s)\n", getpid(), errno, message);
-    exit(-1);
+    fprintf(stderr, "pid: %d\nerror: %s (%d)\n", getpid(), message, errno);
+    exit(errno);
 }
