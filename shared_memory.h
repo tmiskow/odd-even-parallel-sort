@@ -16,7 +16,6 @@ typedef struct Shared_Memory {
 
 void allocate_shared_memory(Shared_Memory_t* shared_memory, size_t N);
 void initialize_shared_memory(Shared_Memory_t* shared_memory, size_t N);
-void swap_shared_memory_values(Shared_Memory_t* shared_memory, size_t index1, size_t index2);
 void destroy_shared_memory(Shared_Memory_t* shared_memory, size_t N);
 
 #endif //_SHARED_MEMORY_H_

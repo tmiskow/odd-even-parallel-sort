@@ -1,18 +1,16 @@
 #include <stdio.h>
 #include <zconf.h>
-#include <stdbool.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <wait.h>
 
 #include "shared_memory.h"
+#include "error.h"
 
 typedef void (*process_t)(size_t, Shared_Memory_t*, size_t);
 void spawn_process(process_t process, size_t index, Shared_Memory_t* shared_memory, size_t N) {
     switch (fork()) {
         case -1:
-            assert(false);
-            exit(-1);
+            error_exit("Error in fork()");
 
         case 0:
             process(index, shared_memory, N);
@@ -23,28 +21,43 @@ void spawn_process(process_t process, size_t index, Shared_Memory_t* shared_memo
     }
 }
 
+void swap(value_t* value1, value_t * value2) {
+    value_t temp;
+    temp = *value1;
+    *value1 = *value2;
+    *value2 = temp;
+}
+
 void even(size_t index, Shared_Memory_t* shared_memory, size_t N) {
     for (size_t i = 0; i < 2*N; i++) {
         // compare and swap
         if (shared_memory->value_array[2*index] > shared_memory->value_array[2*index + 1]) {
-            swap_shared_memory_values(shared_memory, 2*index, 2*index + 1);
+            swap(&shared_memory->value_array[2*index], &shared_memory->value_array[2*index + 1]);
         }
         // signal odd processes
         if (index > 0) {
-            sem_post(&shared_memory->odd_semaphore_array[index - 1]);
+            if (sem_post(&shared_memory->odd_semaphore_array[index - 1]) == -1) {
+                error_exit("Error in sem_post()");
+            }
         }
 
         if (index < N - 1) {
-            sem_post(&shared_memory->odd_semaphore_array[index]);
+            if (sem_post(&shared_memory->odd_semaphore_array[index]) == -1) {
+                error_exit("Error in sem_post()");
+            }
         }
 
         // wait for signal from odd processes
         if (index > 0) {
-            sem_wait(&shared_memory->even_semaphore_array[index]);
+            if (sem_wait(&shared_memory->even_semaphore_array[index]) == -1) {
+                error_exit("Error in sem_wait()");
+            }
         }
 
         if (index < N - 1) {
-            sem_wait(&shared_memory->even_semaphore_array[index]);
+            if (sem_wait(&shared_memory->even_semaphore_array[index])) {
+                error_exit("Error in sem_wait()");
+            }
         }
     }
 }
@@ -53,17 +66,24 @@ void odd(size_t index, Shared_Memory_t* shared_memory, size_t N) {
     for (size_t i = 0; i < 2*N; i++) {
         // wait for signal from even processes
         for (size_t j = 0; j < 2; j++) {
-            sem_wait(&shared_memory->odd_semaphore_array[index]);
+            if (sem_wait(&shared_memory->odd_semaphore_array[index])) {
+                error_exit("Error in sem_wait()");
+            }
         }
 
         // compare and swap
         if (shared_memory->value_array[2*index + 1] > shared_memory->value_array[2*index + 2]) {
-            swap_shared_memory_values(shared_memory, 2*index + 1, 2*index + 2);
+            swap(&shared_memory->value_array[2*index + 1], &shared_memory->value_array[2*index + 2]);
         }
 
         // signal even processes
-        sem_post(&shared_memory->even_semaphore_array[index]);
-        sem_post(&shared_memory->even_semaphore_array[index + 1]);
+        if (sem_post(&shared_memory->even_semaphore_array[index]) == -1) {
+            error_exit("Error in sem_post()");
+        }
+
+        if (sem_post(&shared_memory->even_semaphore_array[index + 1]) == -1) {
+            error_exit("Error in sem_post()");
+        }
     }
 }
 
