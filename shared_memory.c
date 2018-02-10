@@ -4,8 +4,10 @@
 #include "error.h"
 
 void allocate_shared_memory(Shared_Memory_t* shared_memory, size_t N) {
+    // calculate size of both semaphore and values arrays
     shared_memory->size = (2*N - 1) * sizeof(sem_t) + 2*N * sizeof(value_t);
 
+    // allocate anonymous shared memory
     int prot = PROT_READ | PROT_WRITE;
     int flags = MAP_SHARED | MAP_ANONYMOUS;
     shared_memory->all = mmap(NULL, shared_memory->size, prot, flags, -1, 0);
@@ -13,6 +15,7 @@ void allocate_shared_memory(Shared_Memory_t* shared_memory, size_t N) {
         error_exit("Error in mmap()");
     }
 
+    // map regions of the shared memory to specific pointers
     shared_memory->odd_semaphore_array = (sem_t*) (shared_memory->all);
     shared_memory->even_semaphore_array = (sem_t*) (shared_memory->all + (N-1) * sizeof(sem_t));
     shared_memory->value_array = (value_t*) (shared_memory->all + (2*N - 1) * sizeof(sem_t));

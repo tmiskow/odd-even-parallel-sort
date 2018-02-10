@@ -2,7 +2,6 @@
 #include <zconf.h>
 #include <stdlib.h>
 #include <wait.h>
-
 #include "shared_memory.h"
 #include "error.h"
 
@@ -11,6 +10,7 @@ void spawn_process(process_t process, size_t index, Shared_Memory_t* shared_memo
     switch (fork()) {
         case -1:
             error_exit("Error in fork()");
+            break;
 
         case 0:
             process(index, shared_memory, N);
@@ -28,6 +28,7 @@ void swap(value_t* value1, value_t * value2) {
     *value2 = temp;
 }
 
+// compares and swaps values at positions 2*i and 2*i+1
 void even(size_t index, Shared_Memory_t* shared_memory, size_t N) {
     for (size_t i = 0; i < 2*N; i++) {
         // compare and swap
@@ -62,6 +63,7 @@ void even(size_t index, Shared_Memory_t* shared_memory, size_t N) {
     }
 }
 
+// compares and swaps values at positions 2*i+1 and 2*i+2
 void odd(size_t index, Shared_Memory_t* shared_memory, size_t N) {
     for (size_t i = 0; i < 2*N; i++) {
         // wait for signal from even processes
@@ -95,6 +97,7 @@ int main() {
     allocate_shared_memory(&shared_memory, N);
     initialize_shared_memory(&shared_memory, N);
 
+    // load array to sort from stdin
     for (size_t i = 0; i < 2*N; i++) {
         scanf("%d", &shared_memory.value_array[i]);
     }
