@@ -1,4 +1,3 @@
-# Sortowanie współbieżne w pamięci dzielonej
 # odd-even-parallel-sort
 
 Simple parallel sorting algorithm written in C using semaphores and shared memory for Concurrent Programming course at University of Warsaw (2017/2018).
